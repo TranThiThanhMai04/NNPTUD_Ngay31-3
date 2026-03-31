@@ -1,0 +1,249 @@
+{
+  "info": {
+    "name": "NNPTUD-S3 Messages API",
+    "_postman_id": "nnptud-s3-messages-2026",
+    "description": "Collection test các router Message: gửi tin nhắn, lấy hội thoại, lấy inbox.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token - tự động lưu sau khi chạy request Login"
+    },
+    {
+      "key": "other_user_id",
+      "value": "PUT_USER_ID_HERE",
+      "type": "string",
+      "description": "ObjectId của user khác để test"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Auth - Login (lấy token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var token = pm.response.text();",
+              "pm.collectionVariables.set('token', token.replace(/\"/g, ''));",
+              "pm.test('Login thành công', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"your_username\",\n  \"password\": \"your_password\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Đăng nhập để lấy JWT token. Token sẽ tự động lưu vào biến {{token}}."
+      }
+    },
+    {
+      "name": "1. GET / - Inbox (tin nhắn cuối mỗi hội thoại)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Trả về status 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Kết quả là mảng', function () {",
+              "    var body = pm.response.json();",
+              "    pm.expect(body).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{token}}",
+            "description": "JWT token từ bước Login"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/messages",
+          "host": ["{{base_url}}"],
+          "path": ["messages"]
+        },
+        "description": "Lấy tin nhắn CUỐI CÙNG của mỗi cuộc hội thoại mà user hiện tại tham gia (inbox)."
+      }
+    },
+    {
+      "name": "2. GET /:userID - Lấy toàn bộ tin nhắn với 1 user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Trả về status 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Kết quả là mảng', function () {",
+              "    var body = pm.response.json();",
+              "    pm.expect(body).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{token}}",
+            "description": "JWT token từ bước Login"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/messages/{{other_user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["messages", "{{other_user_id}}"]
+        },
+        "description": "Lấy TOÀN BỘ tin nhắn 2 chiều giữa user hiện tại và user có ID = {{other_user_id}}. Sắp xếp cũ -> mới."
+      }
+    },
+    {
+      "name": "3. POST / - Gửi tin nhắn VĂN BẢN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Trả về status 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test('messageContent.type là text', function () {",
+              "    var body = pm.response.json();",
+              "    pm.expect(body.messageContent.type).to.eql('text');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{token}}",
+            "description": "JWT token từ bước Login"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "to",
+              "value": "{{other_user_id}}",
+              "description": "ObjectId người nhận",
+              "type": "text"
+            },
+            {
+              "key": "text",
+              "value": "Xin chào! Đây là tin nhắn test.",
+              "description": "Nội dung tin nhắn",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/messages",
+          "host": ["{{base_url}}"],
+          "path": ["messages"]
+        },
+        "description": "Gửi tin nhắn văn bản. Body form-data gồm: to (userID) và text (nội dung). messageContent.type sẽ là 'text'."
+      }
+    },
+    {
+      "name": "4. POST / - Gửi tin nhắn kèm FILE",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Trả về status 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test('messageContent.type là file', function () {",
+              "    var body = pm.response.json();",
+              "    pm.expect(body.messageContent.type).to.eql('file');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{token}}",
+            "description": "JWT token từ bước Login"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "to",
+              "value": "{{other_user_id}}",
+              "description": "ObjectId người nhận",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "description": "Chọn file ảnh từ máy tính (jpg, png, ...)",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/messages",
+          "host": ["{{base_url}}"],
+          "path": ["messages"]
+        },
+        "description": "Gửi tin nhắn kèm file ảnh. Body form-data gồm: to (userID) và file (chọn file). messageContent.type sẽ là 'file', text sẽ là path lưu trên server."
+      }
+    }
+  ]
+}

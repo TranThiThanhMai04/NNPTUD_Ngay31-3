@@ -1,29 +1,32 @@
-let mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-let messageSchema = new mongoose.Schema({
-    sender: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'users',
-        required: true
+const messageSchema = new mongoose.Schema(
+  {
+    from: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
     },
-    receiver: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'users',
-        required: true
+    to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
     },
-    content: {
+    messageContent: {
+      type: {
         type: String,
-        default: ''
-    },
-    type: {
+        enum: ["file", "text"],
+        required: true,
+      },
+      text: {
         type: String,
-        enum: ['text', 'file'],
-        default: 'text'
+        required: true,
+      },
     },
-    isDeleted: {
-        type: Boolean,
-        default: false
-    }
-}, { timestamps: true });
+  },
+  {
+    timestamps: true,
+  }
+);
 
-module.exports = mongoose.model('messages', messageSchema);
+module.exports = mongoose.model("message", messageSchema);

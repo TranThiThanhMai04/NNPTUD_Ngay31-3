@@ -39,5 +39,10 @@ module.exports = {
         storage: storage,
         limits: 5 * 1025 * 1025,
         fileFilter: filterExcel
+    }),
+    uploadAny: multer({
+        storage: storage,
+        limits: 5 * 1025 * 1025
+        // Không filter - chấp nhận mọi loại file
     })
 }
